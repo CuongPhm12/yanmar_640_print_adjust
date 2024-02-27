@@ -26,7 +26,7 @@ function getData() {
 
       $(".option_name_id").text(option_name);
 
-      let storage_status = print_data.storage_status;
+      let storage_status = print_data[0].storage_status;
       if (storage_status == "STATUS99") {
         $("#prog_status_id").text("승인 완료");
       }
