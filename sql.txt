@@ -1,0 +1,55 @@
+SELECT {from_date} from_date
+     , {to_date} to_date
+     , {user_id_ser} user_id_ser
+     , a.end_agency_cd
+     , il.release_no
+     , il.sorder
+     , SUBSTRING(il.load_confirm_date, 1, 10) as load_confirm_date
+     , il.item_cd
+     , il.stock_id
+     , il.serial_id
+     , em.prod_type1
+     , em.carcass_cd
+     , em.sales_cd
+     , em.spec
+     , al.machine_no
+     , al.built_no
+     , ifnull(il.release_qty, 0)    as release_qty
+     , ifnull(il.release_price, 0)  as release_price
+     , ifnull(il.release_amount, 0) as release_amount
+     , il.option_1
+     , il.option_2
+     , il.option_3
+     , ot1.option_name as option_1_name
+     , ot2.option_name as option_2_name
+     , ot3.option_name as option_3_name
+     , il.change_date
+     , il.storage_status
+     , CASE WHEN il.storage_status = 'STATUS99' THEN concat('<span class="form-circle-sm" style="background-color:#0063B2;"><span style="color:white;">', '승인', '</span</span>')
+            ELSE concat('<span class="form-circle-sm" style="background-color:#2BAE66;"><span style="color:white;">', '미승인', '</span</span>')
+            END AS prog_status
+     , emp.user_id
+     , CONCAT(cy.region,"  ",cy.agency_name) as region_age
+     , cy.ceo_name
+     , cy.tel_no as age_tel_no
+     , ord_cy.end_delv_name
+     , ord_cy.end_tel_no
+     , ord_cy.end_address
+     , CONCAT(SUBSTRING(il.change_date, 1, 4),"년",SUBSTRING(il.change_date, 6,2),"월",SUBSTRING(il.change_date, 9,2),"일") as date_change
+     ,il.approval_date
+  FROM tb_ma_agency_emp emp
+  JOIN tb_release_storage a on a.end_agency_cd = emp.agency_cd
+  JOIN tb_release_storage_detail il on il.release_no = a.release_no
+  LEFT JOIN tb_product_serial al on al.serial_id = il.serial_id
+  LEFT JOIN tb_ma_agency cy on cy.agency_cd = a.end_agency_cd
+  LEFT JOIN tb_release_order_storage ord_cy on ord_cy.release_order_no = il.release_order_no
+  LEFT JOIN vw_ma_item em on il.item_cd = em.item_cd
+  left join vw_ma_item_parts_option ot1 on ot1.option_item_cd = il.option_1 and ot1.item_cd = il.item_cd and ot1.parts_option_type = 'W'
+  left join vw_ma_item_parts_option ot2 on ot2.option_item_cd = il.option_2 and ot2.item_cd = il.item_cd and ot2.parts_option_type = 'T'
+  left join vw_ma_item_parts_option ot3 on ot3.option_item_cd = il.option_3 and ot3.item_cd = il.item_cd and ot3.parts_option_type = 'H'	
+ where emp.user_id = {user_id_ser}
+   and a.release_status = 'STATUS99'
+   and il.storage_status <> 'STATUS01'  -- 보관기가 아닌 경우(판매전환요청이 된 경우)
+   and il.load_confirm_yn = 'Y'
+   and (ifnull({from_date},'') = '' or SUBSTRING(il.change_date, 1, 7) >= {from_date})
+   and (ifnull({to_date},'') = '' or SUBSTRING(il.change_date, 1, 7) <= {to_date})
